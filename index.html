@@ -789,294 +789,482 @@
         </div>
     </div>
 
-    <script>
-        // 1. Video Logic - FIXED (Plays fully)
-        const videoOverlay = document.getElementById('video-overlay');
-        const video = document.getElementById('opening-video');
-        const videoLoader = document.getElementById('video-loader');
-        const playHint = document.getElementById('play-hint');
-        let videoReady = false;
-        let videoPlayed = false;
+    
+<script>
+    // 1. Video Logic
+    const videoOverlay = document.getElementById('video-overlay');
+    const video = document.getElementById('opening-video');
+    const videoLoader = document.getElementById('video-loader');
+    const playHint = document.getElementById('play-hint');
 
+    let videoReady = false;
+    let videoPlayed = false;
+
+    if (video) {
         video.addEventListener('loadeddata', () => {
-            videoLoader.style.display = 'none';
-            playHint.style.display = 'block';
+            if (videoLoader) videoLoader.style.display = 'none';
+            if (playHint) playHint.style.display = 'block';
             video.classList.add('loaded');
             videoReady = true;
         });
 
         video.addEventListener('error', () => {
-            videoLoader.style.display = 'none';
-            playHint.textContent = 'Click to Continue';
-            playHint.style.display = 'block';
-            videoReady = true; // Allow click to proceed even if video fails
-        });
-
-        function playVideo() {
-            if (!videoReady) return;
-
-            if (!videoPlayed) {
-                video.play().then(() => {
-                    videoPlayed = true;
-                    playHint.style.display = 'none';
-
-                    // Wait for video to naturally end
-                    video.onended = function () {
-                        showMainContent();
-                    };
-                }).catch(e => {
-                    // If autoplay fails or other error, just show content
-                    showMainContent();
-                });
-            } else {
-                // If clicked again after playing, skip to content
-                showMainContent();
+            if (videoLoader) videoLoader.style.display = 'none';
+            if (playHint) {
+                playHint.textContent = 'Click to Continue';
+                playHint.style.display = 'block';
             }
-        }
+            videoReady = true;
+        });
+    }
 
-        function showMainContent() {
-            videoOverlay.style.opacity = '0';
-            setTimeout(() => {
-                videoOverlay.style.display = 'none';
-                const main = document.getElementById('main-content');
+    function playVideo() {
+        if (!videoReady) return;
+
+        if (!videoPlayed && video) {
+            video.play().then(() => {
+                videoPlayed = true;
+
+                if (playHint) playHint.style.display = 'none';
+
+                video.onended = function () {
+                    showMainContent();
+                };
+            }).catch(error => {
+                console.error('Video playback failed:', error);
+                showMainContent();
+            });
+        } else {
+            showMainContent();
+        }
+    }
+
+    function showMainContent() {
+        if (!videoOverlay) return;
+
+        videoOverlay.style.opacity = '0';
+
+        setTimeout(() => {
+            videoOverlay.style.display = 'none';
+
+            const main = document.getElementById('main-content');
+
+            if (main) {
                 main.style.display = 'block';
                 void main.offsetWidth;
                 main.style.opacity = '1';
-                initScrollAnimations();
-                initScratch();
-            }, 1000);
+            }
+
+            initScrollAnimations();
+            initScratch();
+        }, 1000);
+    }
+
+
+    // 2. Countdown Timer
+    function initCountdown() {
+        const daysEl = document.getElementById('days');
+        const hoursEl = document.getElementById('hours');
+        const minutesEl = document.getElementById('minutes');
+        const secondsEl = document.getElementById('seconds');
+
+        const weddingDate = new Date(
+            'December 28, 2026 19:30:00'
+        ).getTime();
+
+        function update() {
+            const now = new Date().getTime();
+            const distance = weddingDate - now;
+
+            if (distance < 0) return;
+
+            if (daysEl) {
+                daysEl.textContent = String(
+                    Math.floor(distance / (1000 * 60 * 60 * 24))
+                ).padStart(2, '0');
+            }
+
+            if (hoursEl) {
+                hoursEl.textContent = String(
+                    Math.floor(
+                        (distance % (1000 * 60 * 60 * 24)) /
+                        (1000 * 60 * 60)
+                    )
+                ).padStart(2, '0');
+            }
+
+            if (minutesEl) {
+                minutesEl.textContent = String(
+                    Math.floor(
+                        (distance % (1000 * 60 * 60)) /
+                        (1000 * 60)
+                    )
+                ).padStart(2, '0');
+            }
+
+            if (secondsEl) {
+                secondsEl.textContent = String(
+                    Math.floor((distance % (1000 * 60)) / 1000)
+                ).padStart(2, '0');
+            }
         }
 
-        // 2. Countdown Timer
-        function initCountdown() {
-            const weddingDate = new Date('December 28, 2026 19:30:00').getTime();
-            function update() {
-                const now = new Date().getTime();
-                const distance = weddingDate - now;
-                if (distance < 0) return;
-                document.getElementById('days').textContent = String(Math.floor(distance / (1000 * 60 * 60 * 24))).padStart(2, '0');
-                document.getElementById('hours').textContent = String(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
-                document.getElementById('minutes').textContent = String(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
-                document.getElementById('seconds').textContent = String(Math.floor((distance % (1000 * 60)) / 1000)).padStart(2, '0');
-            }
-            setInterval(update, 1000);
-            update();
+        update();
+        setInterval(update, 1000);
+    }
+
+    initCountdown();
+
+
+    // 3. Scratch Card
+    let scratchInitialized = false;
+    let confettiTriggered = false;
+
+    function initScratch() {
+        if (scratchInitialized) return;
+
+        const canvas = document.getElementById('scratch-canvas');
+
+        if (!canvas || !canvas.parentElement) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const container = canvas.parentElement;
+
+        canvas.width = container.offsetWidth;
+        canvas.height = container.offsetHeight;
+
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#c4b4a0';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#b4a490';
+
+        for (let i = 0; i < 30; i++) {
+            ctx.beginPath();
+            ctx.arc(
+                Math.random() * canvas.width,
+                Math.random() * canvas.height,
+                Math.random() * 10 + 5,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
         }
-        initCountdown();
 
-        // 3. Scratch Card
-        let scratchInitialized = false;
-        let confettiTriggered = false;
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.font = 'bold 16px "Playfair Display"';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
 
-        function initScratch() {
-            if (scratchInitialized) return;
-            const canvas = document.getElementById('scratch-canvas');
-            const ctx = canvas.getContext('2d');
-            const container = canvas.parentElement;
+        ctx.fillText(
+            '✦ SCRATCH HERE ✦',
+            canvas.width / 2,
+            canvas.height / 2
+        );
 
-            canvas.width = container.offsetWidth;
-            canvas.height = container.offsetHeight;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let scratchComplete = false;
 
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.fillStyle = '#c4b4a0';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
 
-            ctx.fillStyle = '#b4a490';
-            for (let i = 0; i < 30; i++) {
-                ctx.beginPath();
-                ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 10 + 5, 0, Math.PI * 2);
-                ctx.fill();
+            const clientX = e.clientX ??
+                (e.touches && e.touches[0].clientX);
+
+            const clientY = e.clientY ??
+                (e.touches && e.touches[0].clientY);
+
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function startScratch(e) {
+            if (scratchComplete) return;
+
+            e.preventDefault();
+            isDrawing = true;
+
+            const pos = getPos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function scratch(x, y) {
+            if (!isDrawing || scratchComplete) return;
+
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.lineWidth = 35;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            lastX = x;
+            lastY = y;
+        }
+
+        function endScratch() {
+            if (!isDrawing || scratchComplete) return;
+
+            isDrawing = false;
+            checkScratchPercentage();
+        }
+
+        function checkScratchPercentage() {
+            if (scratchComplete) return;
+
+            const imageData = ctx.getImageData(
+                0, 0, canvas.width, canvas.height
+            );
+
+            const pixels = imageData.data;
+            let transparent = 0;
+            const totalPixels = pixels.length / 4;
+
+            for (let i = 3; i < pixels.length; i += 40) {
+                if (pixels[i] === 0) transparent++;
             }
 
-            ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            ctx.font = 'bold 16px "Playfair Display"';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('✦ SCRATCH HERE ✦', canvas.width / 2, canvas.height / 2);
+            const percent =
+                (transparent / (totalPixels / 10)) * 100;
 
-            let isDrawing = false;
-            let lastX = 0;
-            let lastY = 0;
-            let scratchComplete = false;
+            if (percent > 50) {
+                scratchComplete = true;
+                canvas.style.transition = 'opacity 0.8s ease';
+                canvas.style.opacity = '0';
 
-            function getPos(e) {
-                const rect = canvas.getBoundingClientRect();
-                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-                return { x: clientX - rect.left, y: clientY - rect.top };
-            }
+                setTimeout(() => {
+                    canvas.style.display = 'none';
+                }, 800);
 
-            function startScratch(e) {
-                if (scratchComplete) return;
-                e.preventDefault();
-                isDrawing = true;
-                const pos = getPos(e);
-                lastX = pos.x;
-                lastY = pos.y;
-            }
+                if (!confettiTriggered && typeof confetti === 'function') {
+                    confettiTriggered = true;
 
-            function scratch(x, y) {
-                if (!isDrawing || scratchComplete) return;
-                ctx.globalCompositeOperation = 'destination-out';
-                ctx.beginPath();
-                ctx.moveTo(lastX, lastY);
-                ctx.lineTo(x, y);
-                ctx.lineWidth = 35;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                ctx.stroke();
-                lastX = x;
-                lastY = y;
-            }
-
-            function endScratch() {
-                if (!isDrawing || scratchComplete) return;
-                isDrawing = false;
-                checkScratchPercentage();
-            }
-
-            function checkScratchPercentage() {
-                if (scratchComplete) return;
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const pixels = imageData.data;
-                let transparent = 0;
-                const totalPixels = pixels.length / 4;
-                for (let i = 3; i < pixels.length; i += 40) {
-                    if (pixels[i] === 0) transparent++;
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: [
+                            '#a89068',
+                            '#d4c4b0',
+                            '#ffffff',
+                            '#8b7355'
+                        ]
+                    });
                 }
-                const percent = (transparent / (totalPixels / 10)) * 100;
-
-                if (percent > 50) {
-                    scratchComplete = true;
-                    canvas.style.transition = 'opacity 0.8s ease';
-                    canvas.style.opacity = '0';
-                    setTimeout(() => canvas.style.display = 'none', 800);
-
-                    if (!confettiTriggered) {
-                        confettiTriggered = true;
-                        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#a89068', '#d4c4b0', '#ffffff', '#8b7355'] });
-                    }
-                }
             }
-
-            canvas.addEventListener('mousedown', startScratch);
-            canvas.addEventListener('mousemove', (e) => { if (isDrawing && !scratchComplete) { e.preventDefault(); const pos = getPos(e); scratch(pos.x, pos.y); } });
-            canvas.addEventListener('mouseup', endScratch);
-            canvas.addEventListener('mouseleave', endScratch);
-            canvas.addEventListener('touchstart', startScratch, { passive: false });
-            canvas.addEventListener('touchmove', (e) => { if (isDrawing && !scratchComplete) { e.preventDefault(); const pos = getPos(e); scratch(pos.x, pos.y); } }, { passive: false });
-            canvas.addEventListener('touchend', endScratch);
-
-            scratchInitialized = true;
         }
 
-        // 4. Scroll Animations
-        function initScrollAnimations() {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
-            }, { threshold: 0.1 });
-            document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
+        canvas.addEventListener('mousedown', startScratch);
+
+        canvas.addEventListener('mousemove', e => {
+            if (!isDrawing || scratchComplete) return;
+
+            e.preventDefault();
+            const pos = getPos(e);
+            scratch(pos.x, pos.y);
+        });
+
+        canvas.addEventListener('mouseup', endScratch);
+        canvas.addEventListener('mouseleave', endScratch);
+
+        canvas.addEventListener('touchstart', startScratch, {
+            passive: false
+        });
+
+        canvas.addEventListener('touchmove', e => {
+            if (!isDrawing || scratchComplete) return;
+
+            e.preventDefault();
+            const pos = getPos(e);
+            scratch(pos.x, pos.y);
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', endScratch);
+
+        scratchInitialized = true;
+    }
+
+
+    // 4. Scroll Animations
+    function initScrollAnimations() {
+        if (!('IntersectionObserver' in window)) {
+            document.querySelectorAll('.fade-in-up').forEach(el => {
+                el.classList.add('visible');
+            });
+            return;
         }
-                    // 5. Minimal Music Control
-        
-function toggleMusic() {
+
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in-up').forEach(el => {
+            observer.observe(el);
+        });
+    }
+
+
+    // 5. Music Control
     const bgMusic = document.getElementById('bg-music');
     const musicBtn = document.getElementById('music-btn');
 
-    if (!bgMusic || !musicBtn) return;
+    // The same function is used by the bottom music button.
+    async function toggleMusic() {
+        if (!bgMusic) {
+            console.error('Music error: #bg-music element not found.');
+            return;
+        }
 
-    if (bgMusic.paused) {
-        bgMusic.play().catch(error => {
-            console.log("Music playback failed:", error);
-        });
-    } else {
-        bgMusic.pause();
+        if (bgMusic.paused) {
+            try {
+                await bgMusic.play();
+            } catch (error) {
+                console.error('Music playback failed:', error);
+            }
+        } else {
+            bgMusic.pause();
+        }
     }
-}
 
-// Keep the button animation synchronized with music playback
-const bgMusic = document.getElementById('bg-music');
-const musicBtn = document.getElementById('music-btn');
+    // Update the button animation based on actual playback state.
+    if (bgMusic && musicBtn) {
+        bgMusic.addEventListener('play', () => {
+            musicBtn.classList.add('playing');
+        });
 
-bgMusic.addEventListener('play', () => {
-    musicBtn.classList.add('playing');
-});
+        bgMusic.addEventListener('pause', () => {
+            musicBtn.classList.remove('playing');
+        });
 
-bgMusic.addEventListener('pause', () => {
-    musicBtn.classList.remove('playing');
-});
+        bgMusic.addEventListener('ended', () => {
+            musicBtn.classList.remove('playing');
+        });
 
-// Start music on the first screen click
-document.addEventListener('click', function startMusicOnFirstClick(event) {
-    document.removeEventListener('click', startMusicOnFirstClick);
-
-    // The music button already handles its own click
-    if (event.target.closest('#music-btn')) return;
-
-    if (bgMusic.paused) {
-        bgMusic.play().catch(error => {
-            console.log("Music playback requires another tap:", error);
+        bgMusic.addEventListener('error', () => {
+            console.error(
+                'Music file failed to load:',
+                bgMusic.currentSrc,
+                bgMusic.error
+            );
         });
     }
-});
 
-        // 6. RSVP Form Email Handling
-        const form = document.getElementById("rsvp-form");
-        const statusMsg = document.getElementById("form-status");
-        const submitBtn = document.getElementById("submit-btn");
+    // Start music on the visitor's first interaction.
+    // Capture phase allows this to run even when the video overlay
+    // handles the same interaction.
+    function startMusicOnFirstInteraction(event) {
+        document.removeEventListener(
+            'pointerdown',
+            startMusicOnFirstInteraction,
+            true
+        );
 
-        async function handleRSVP(event) {
-            event.preventDefault(); // Stop page reload
-            
-            const data = new FormData(event.target);
-            
-            // Change button text while sending
-            submitBtn.textContent = "SENDING...";
-            submitBtn.disabled = true;
+        // The music button has its own play/pause handler.
+        if (event.target.closest('#music-btn')) return;
 
-            fetch(event.target.action, {
+        if (bgMusic && bgMusic.paused) {
+            bgMusic.play().catch(error => {
+                console.error(
+                    'First-interaction music playback failed:',
+                    error
+                );
+            });
+        }
+    }
+
+    document.addEventListener(
+        'pointerdown',
+        startMusicOnFirstInteraction,
+        true
+    );
+
+
+    // 6. RSVP Form Email Handling
+    const form = document.getElementById('rsvp-form');
+    const statusMsg = document.getElementById('form-status');
+    const submitBtn = document.getElementById('submit-btn');
+
+    async function handleRSVP(event) {
+        event.preventDefault();
+
+        if (!form || !submitBtn || !statusMsg) return;
+
+        const data = new FormData(event.target);
+
+        submitBtn.textContent = 'SENDING...';
+        submitBtn.disabled = true;
+
+        try {
+            const response = await fetch(event.target.action, {
                 method: form.method,
                 body: data,
                 headers: {
                     'Accept': 'application/json'
                 }
-            }).then(response => {
-                if (response.ok) {
-                    // Success!
-                    statusMsg.style.display = "block";
-                    statusMsg.style.color = "green";
-                    statusMsg.textContent = "Thank you! Your RSVP has been sent successfully.";
-                    form.reset(); // Clear the form
-                    submitBtn.textContent = "SENT";
-                    
-                    // Reset button after 4 seconds
-                    setTimeout(() => {
-                        submitBtn.textContent = "SEND RSVP";
-                        submitBtn.disabled = false;
-                        statusMsg.style.display = "none";
-                    }, 4000);
-                } else {
-                    // Error
-                    response.json().then(data => {
-                        if (Object.hasOwn(data, 'errors')) {
-                            alert(data["errors"].map(error => error["message"]).join(", "));
-                        } else {
-                            alert("Oops! There was a problem submitting your form.");
-                        }
-                    });
-                    submitBtn.textContent = "SEND RSVP";
-                    submitBtn.disabled = false;
-                }
-            }).catch(error => {
-                alert("Oops! There was a problem submitting your form.");
-                submitBtn.textContent = "SEND RSVP";
-                submitBtn.disabled = false;
             });
+
+            if (response.ok) {
+                statusMsg.style.display = 'block';
+                statusMsg.style.color = 'green';
+                statusMsg.textContent =
+                    'Thank you! Your RSVP has been sent successfully.';
+
+                form.reset();
+                submitBtn.textContent = 'SENT';
+
+                setTimeout(() => {
+                    submitBtn.textContent = 'SEND RSVP';
+                    submitBtn.disabled = false;
+                    statusMsg.style.display = 'none';
+                }, 4000);
+            } else {
+                let errorMessage =
+                    'Oops! There was a problem submitting your form.';
+
+                try {
+                    const result = await response.json();
+
+                    if (result.errors) {
+                        errorMessage = result.errors
+                            .map(error => error.message)
+                            .join(', ');
+                    }
+                } catch (error) {
+                    // Keep the default error message.
+                }
+
+                alert(errorMessage);
+                submitBtn.textContent = 'SEND RSVP';
+                submitBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error('RSVP submission failed:', error);
+
+            alert('Oops! There was a problem submitting your form.');
+            submitBtn.textContent = 'SEND RSVP';
+            submitBtn.disabled = false;
         }
+    }
 
-        form.addEventListener("submit", handleRSVP);
+    if (form) {
+        form.addEventListener('submit', handleRSVP);
+    }
+</script>
 
-    </script>
            <!-- Minimal Music Button -->
     <button id="music-btn" onclick="toggleMusic()" aria-label="Play Music">
         <svg id="music-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
