@@ -978,26 +978,48 @@
             document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
         }
                     // 5. Minimal Music Control
-        function toggleMusic() {
-            const bgMusic = document.getElementById('bg-music');
-            const musicBtn = document.getElementById('music-btn');
-            
-            if (!bgMusic) {
-                console.error('Audio element not found. Check file name.');
-                return;
-            }
+        
+function toggleMusic() {
+    const bgMusic = document.getElementById('bg-music');
+    const musicBtn = document.getElementById('music-btn');
 
-            if (bgMusic.paused) {
-                bgMusic.play().then(() => {
-                    musicBtn.classList.add('playing');
-                }).catch(error => {
-                    console.error('Playback failed:', error);
-                });
-            } else {
-                bgMusic.pause();
-                musicBtn.classList.remove('playing');
-            }
-        }
+    if (!bgMusic || !musicBtn) return;
+
+    if (bgMusic.paused) {
+        bgMusic.play().catch(error => {
+            console.log("Music playback failed:", error);
+        });
+    } else {
+        bgMusic.pause();
+    }
+}
+
+// Keep the button animation synchronized with music playback
+const bgMusic = document.getElementById('bg-music');
+const musicBtn = document.getElementById('music-btn');
+
+bgMusic.addEventListener('play', () => {
+    musicBtn.classList.add('playing');
+});
+
+bgMusic.addEventListener('pause', () => {
+    musicBtn.classList.remove('playing');
+});
+
+// Start music on the first screen click
+document.addEventListener('click', function startMusicOnFirstClick(event) {
+    document.removeEventListener('click', startMusicOnFirstClick);
+
+    // The music button already handles its own click
+    if (event.target.closest('#music-btn')) return;
+
+    if (bgMusic.paused) {
+        bgMusic.play().catch(error => {
+            console.log("Music playback requires another tap:", error);
+        });
+    }
+});
+
         // 6. RSVP Form Email Handling
         const form = document.getElementById("rsvp-form");
         const statusMsg = document.getElementById("form-status");
