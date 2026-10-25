@@ -682,7 +682,7 @@
             </div>
 
             <!-- Hosts -->
-            <div class="fade-in-up" style="margin-top: 40px;">
+            <div class="fade-in-up" style="margin-top: 10px;">
                 <h2 class="hosts">Mrs. Zakiya Maheboob Shaikh</h2>
                 <p>Solicit your presence on the auspicious occasion of the</p>
                 <h1 style="font-size: 2.5rem; margin: 20px 0; font-style: italic;">Walima</h1>
@@ -919,6 +919,8 @@
 
     // 2. Countdown Timer
     function initCountdown() {
+        if (countdownStarted) return;
+        countdownStarted = true;
         const daysEl = document.getElementById('days');
         const hoursEl = document.getElementById('hours');
         const minutesEl = document.getElementById('minutes');
@@ -969,7 +971,7 @@
         setInterval(update, 1000);
     }
 
-    initCountdown();
+    let countdownStarted = false;
     
 /* Aesthetic champagne fireworks */
 function startAestheticFireworks() {
@@ -1259,16 +1261,24 @@ function startAestheticFireworks() {
             };
         }
 
+        
         function startScratch(e) {
             if (scratchComplete) return;
-
+        
             e.preventDefault();
             isDrawing = true;
-
+        
+            // Start the rockets when scratching begins
+            if (!confettiTriggered) {
+                confettiTriggered = true;
+                startAestheticFireworks();
+            }
+        
             const pos = getPos(e);
             lastX = pos.x;
             lastY = pos.y;
         }
+
 
         function scratch(x, y) {
             if (!isDrawing || scratchComplete) return;
@@ -1312,19 +1322,19 @@ function startAestheticFireworks() {
                 (transparent / (totalPixels / 10)) * 100;
 
             if (percent > 50) {
-                scratchComplete = true;
-                canvas.style.transition = 'opacity 0.8s ease';
-                canvas.style.opacity = '0';
-
-                setTimeout(() => {
-                    canvas.style.display = 'none';
-                }, 800);
-
-                if (!confettiTriggered) {
-                confettiTriggered = true;
-                startAestheticFireworks();
-            }
-            }
+                    scratchComplete = true;
+                
+                    // Hide the scratch card after the date is revealed
+                    canvas.style.transition = 'opacity 0.8s ease';
+                    canvas.style.opacity = '0';
+                
+                    setTimeout(() => {
+                        canvas.style.display = 'none';
+                    }, 800);
+                
+                    // Start the countdown only after the date is revealed
+                    initCountdown();
+                }
         }
 
         canvas.addEventListener('mousedown', startScratch);
