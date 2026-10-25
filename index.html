@@ -874,8 +874,18 @@
         });
     }
 
-    function playVideo() {
+     function playVideo() {
         if (!videoReady) return;
+
+        // --- NEW: Unlock and play music on the first user click ---
+        if (bgMusic && bgMusic.paused) {
+            bgMusic.play().then(() => {
+                if (musicBtn) musicBtn.classList.add('playing');
+            }).catch(error => {
+                console.warn('Music play failed:', error);
+            });
+        }
+        // ----------------------------------------------------------
 
         if (!videoPlayed && video) {
             video.play().then(() => {
