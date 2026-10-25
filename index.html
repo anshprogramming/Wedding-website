@@ -1398,21 +1398,21 @@ function startAestheticFireworks() {
 
     // The same function is used by the bottom music button.
     async function toggleMusic() {
-        if (!bgMusic) {
-            console.error('Music error: #bg-music element not found.');
-            return;
-        }
+    if (!bgMusic) {
+        console.error('Music element not found.');
+        return;
+    }
 
+    try {
         if (bgMusic.paused) {
-            try {
-                await bgMusic.play();
-            } catch (error) {
-                console.error('Music playback failed:', error);
-            }
+            await bgMusic.play();
         } else {
             bgMusic.pause();
         }
+    } catch (error) {
+        console.error('Music playback failed:', error.name, error.message);
     }
+}
 
     // Update the button animation based on actual playback state.
     if (bgMusic && musicBtn) {
