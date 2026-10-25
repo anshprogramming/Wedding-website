@@ -841,8 +841,8 @@
         </div>
     </div>
 
-    <audio id="bg-music" loop preload="auto">
-    <source src="song.mpeg" type="audio/mpeg">
+  <audio id="bg-music" loop preload="auto">
+    <source src="song.mp3" type="audio/mpeg">
 </audio>
 
     
@@ -874,36 +874,40 @@
         });
     }
 
-   function playVideo() {
-    if (!videoReady) return;
+      function playVideo() {
+        if (!videoReady) return;
 
-    if (!videoPlayed && video) {
-        // Try to play background music on first user interaction
+        // 1. Try to play background music on the very first user click
+        // This bypasses browser autoplay restrictions
         if (bgMusic && !userInteracted) {
+            userInteracted = true; // Mark as interacted so it doesn't try to auto-play again
+            
             bgMusic.play().catch(error => {
-                // Ignore AbortError - normal behavior
+                // Ignore AbortError - it just means the play was interrupted, which is normal
                 if (error.name !== 'AbortError') {
                     console.warn('Autoplay prevented, user can click music button');
                 }
             });
         }
 
-        video.play().then(() => {
-            videoPlayed = true;
+        // 2. Play the opening video
+        if (!videoPlayed && video) {
+            video.play().then(() => {
+                videoPlayed = true;
 
-            if (playHint) playHint.style.display = 'none';
+                if (playHint) playHint.style.display = 'none';
 
-            video.onended = function () {
+                video.onended = function () {
+                    showMainContent();
+                };
+            }).catch(error => {
+                console.error('Video playback failed:', error);
                 showMainContent();
-            };
-        }).catch(error => {
-            console.error('Video playback failed:', error);
+            });
+        } else {
             showMainContent();
-        });
-    } else {
-        showMainContent();
+        }
     }
-}
 
     function showMainContent() {
         if (!videoOverlay) return;
@@ -1404,64 +1408,49 @@ function startAestheticFireworks() {
 
         
    
-       // 5. Music Control
-const bgMusic = document.getElementById('bg-music');
-const musicBtn = document.getElementById('music-btn');
-let musicBusy = false;
-let userInteracted = false;
+    // 5. Music Control
+    const bgMusic = document.getElementById('bg-music');
+    const musicBtn = document.getElementById('music-btn');
+    let musicBusy = false;
+    let userInteracted = false;
 
-function toggleMusic() {
-    if (!bgMusic) {
-        console.error('Audio element not found.');
-        return;
-    }
-
-    if (musicBusy) return;
-    userInteracted = true;
-
-    if (bgMusic.paused) {
-        musicBusy = true;
-        bgMusic.play()
-            .then(() => {
-                if (musicBtn) {
-                    musicBtn.classList.add('playing');
-                }
-            })
-            .catch(error => {
-                // Ignore AbortError - it's normal when play is interrupted
-                if (error.name !== 'AbortError') {
-                    console.error('Music playback failed:', error.name, error.message);
-                }
-            })
-            .finally(() => {
-                musicBusy = false;
-            });
-    } else {
-        musicBusy = true;
-        bgMusic.pause();
+    function toggleMusic() {
+        if (!bgMusic) return;
+        if (musicBusy) return;
         
-        if (musicBtn) {
-            musicBtn.classList.remove('playing');
+        userInteracted = true;
+
+        if (bgMusic.paused) {
+            musicBusy = true;
+            bgMusic.play()
+                .then(() => {
+                    if (musicBtn) musicBtn.classList.add('playing');
+                })
+                .catch(error => {
+                    // Ignore AbortError - it's normal when play is interrupted
+                    if (error.name !== 'AbortError') {
+                        console.error('Music playback failed:', error);
+                    }
+                })
+                .finally(() => {
+                    musicBusy = false;
+                });
+        } else {
+            musicBusy = true;
+            bgMusic.pause();
+            if (musicBtn) musicBtn.classList.remove('playing');
+            musicBusy = false;
         }
-        
-        musicBusy = false;
     }
-}
 
-// Handle music button state changes
-if (bgMusic) {
-    bgMusic.addEventListener('play', () => {
-        if (musicBtn) musicBtn.classList.add('playing');
-    });
-
-    bgMusic.addEventListener('pause', () => {
-        if (musicBtn) musicBtn.classList.remove('playing');
-    });
-    
-    bgMusic.addEventListener('ended', () => {
-        if (musicBtn) musicBtn.classList.remove('playing');
-    });
-}
+    if (bgMusic) {
+        bgMusic.addEventListener('play', () => {
+            if (musicBtn) musicBtn.classList.add('playing');
+        });
+        bgMusic.addEventListener('pause', () => {
+            if (musicBtn) musicBtn.classList.remove('playing');
+        });
+    }
 
     // 6. RSVP Form Email Handling
     const form = document.getElementById('rsvp-form');
