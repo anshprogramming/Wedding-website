@@ -1392,51 +1392,57 @@ function startAestheticFireworks() {
     }
 
 
-    // 5. Music Control
-    const bgMusic = document.getElementById('bg-music');
-    const musicBtn = document.getElementById('music-btn');
+// 5. Music Control
+const bgMusic = document.getElementById('bg-music');
+const musicBtn = document.getElementById('music-btn');
 
-    // The same function is used by the bottom music button.
-    async function toggleMusic() {
-    if (!bgMusic) {
-        console.error('Music element not found.');
+let musicRequestId = 0;
+
+async function toggleMusic() {
+    if (!bgMusic || !musicBtn) return;
+
+    const requestId = ++musicRequestId;
+
+    if (!bgMusic.paused) {
+        bgMusic.pause();
         return;
     }
 
     try {
-        if (bgMusic.paused) {
-            await bgMusic.play();
-        } else {
-            bgMusic.pause();
-        }
+        await bgMusic.play();
+
+        // Ignore an outdated playback request.
+        if (requestId !== musicRequestId) return;
+
+        musicBtn.classList.add('playing');
     } catch (error) {
-        console.error('Music playback failed:', error.name, error.message);
+        if (requestId !== musicRequestId) return;
+
+        console.error(
+            'Music playback failed:',
+            error.name,
+            error.message
+        );
     }
 }
 
-    // Update the button animation based on actual playback state.
-    if (bgMusic && musicBtn) {
-        bgMusic.addEventListener('play', () => {
-            musicBtn.classList.add('playing');
-        });
+if (bgMusic && musicBtn) {
+    bgMusic.addEventListener('play', () => {
+        musicBtn.classList.add('playing');
+    });
 
-        bgMusic.addEventListener('pause', () => {
-            musicBtn.classList.remove('playing');
-        });
+    bgMusic.addEventListener('pause', () => {
+        musicBtn.classList.remove('playing');
+    });
 
-        bgMusic.addEventListener('ended', () => {
-            musicBtn.classList.remove('playing');
-        });
-
-        bgMusic.addEventListener('error', () => {
-            console.error(
-                'Music file failed to load:',
-                bgMusic.currentSrc,
-                bgMusic.error
-            );
-        });
-    }
-
+    bgMusic.addEventListener('error', () => {
+        console.error(
+            'Music file failed to load:',
+            bgMusic.currentSrc,
+            bgMusic.error
+        );
+    });
+}
    
 
     // 6. RSVP Form Email Handling
