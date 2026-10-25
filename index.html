@@ -1393,54 +1393,49 @@ function startAestheticFireworks() {
 
 
         
+   
     // 5. Music Control
     const bgMusic = document.getElementById('bg-music');
     const musicBtn = document.getElementById('music-btn');
 
-    let musicBusy = false;
+    function toggleMusic() {
+        if (!bgMusic) {
+            console.error('Audio element not found.');
+            return;
+        }
 
-    async function toggleMusic() {
-        if (!bgMusic || !musicBtn || musicBusy) return;
+        if (bgMusic.paused) {
+            const playPromise = bgMusic.play();
 
-        musicBusy = true;
-
-        try {
-            if (bgMusic.paused) {
-                // Start playback directly from the user's button click.
-                bgMusic.currentTime = bgMusic.currentTime || 0;
-                await bgMusic.play();
-            } else {
-                bgMusic.pause();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        if (musicBtn) {
+                            musicBtn.classList.add('playing');
+                        }
+                    })
+                    .catch(error => {
+                        console.error(
+                            'Music playback failed:',
+                            error.name,
+                            error.message
+                        );
+                    });
             }
-        } catch (error) {
-            console.error(
-                'Music playback failed:',
-                error.name,
-                error.message
-            );
-        } finally {
-            musicBusy = false;
+        } else {
+            bgMusic.pause();
         }
     }
 
-    if (bgMusic && musicBtn) {
+    if (bgMusic) {
         bgMusic.addEventListener('play', () => {
-            musicBtn.classList.add('playing');
+            if (musicBtn) musicBtn.classList.add('playing');
         });
 
         bgMusic.addEventListener('pause', () => {
-            musicBtn.classList.remove('playing');
-        });
-
-        bgMusic.addEventListener('error', () => {
-            console.error(
-                'Audio file error:',
-                bgMusic.currentSrc,
-                bgMusic.error?.code
-            );
+            if (musicBtn) musicBtn.classList.remove('playing');
         });
     }
-
 
     // 6. RSVP Form Email Handling
     const form = document.getElementById('rsvp-form');
