@@ -1398,34 +1398,45 @@ function startAestheticFireworks() {
     const bgMusic = document.getElementById('bg-music');
     const musicBtn = document.getElementById('music-btn');
 
-    function toggleMusic() {
-        if (!bgMusic) {
-            console.error('Audio element not found.');
-            return;
-        }
+   
+let musicBusy = false;
 
-        if (bgMusic.paused) {
-            const playPromise = bgMusic.play();
+function toggleMusic() {
+    if (!bgMusic) {
+        console.error('Audio element not found.');
+        return;
+    }
 
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        if (musicBtn) {
-                            musicBtn.classList.add('playing');
-                        }
-                    })
-                    .catch(error => {
-                        console.error(
-                            'Music playback failed:',
-                            error.name,
-                            error.message
-                        );
-                    });
-            }
-        } else {
-            bgMusic.pause();
+    if (musicBusy) return;
+
+    if (bgMusic.paused) {
+        musicBusy = true;
+
+        bgMusic.play()
+            .then(() => {
+                if (musicBtn) {
+                    musicBtn.classList.add('playing');
+                }
+            })
+            .catch(error => {
+                console.error(
+                    'Music playback failed:',
+                    error.name,
+                    error.message
+                );
+            })
+            .finally(() => {
+                musicBusy = false;
+            });
+    } else {
+        bgMusic.pause();
+
+        if (musicBtn) {
+            musicBtn.classList.remove('playing');
         }
     }
+}
+
 
     if (bgMusic) {
         bgMusic.addEventListener('play', () => {
