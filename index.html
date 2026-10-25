@@ -1392,58 +1392,55 @@ function startAestheticFireworks() {
     }
 
 
-// 5. Music Control
-const bgMusic = document.getElementById('bg-music');
-const musicBtn = document.getElementById('music-btn');
+        
+    // 5. Music Control
+    const bgMusic = document.getElementById('bg-music');
+    const musicBtn = document.getElementById('music-btn');
 
-let musicRequestId = 0;
+    let musicBusy = false;
 
-async function toggleMusic() {
-    if (!bgMusic || !musicBtn) return;
+    async function toggleMusic() {
+        if (!bgMusic || !musicBtn || musicBusy) return;
 
-    const requestId = ++musicRequestId;
+        musicBusy = true;
 
-    if (!bgMusic.paused) {
-        bgMusic.pause();
-        return;
+        try {
+            if (bgMusic.paused) {
+                // Start playback directly from the user's button click.
+                bgMusic.currentTime = bgMusic.currentTime || 0;
+                await bgMusic.play();
+            } else {
+                bgMusic.pause();
+            }
+        } catch (error) {
+            console.error(
+                'Music playback failed:',
+                error.name,
+                error.message
+            );
+        } finally {
+            musicBusy = false;
+        }
     }
 
-    try {
-        await bgMusic.play();
+    if (bgMusic && musicBtn) {
+        bgMusic.addEventListener('play', () => {
+            musicBtn.classList.add('playing');
+        });
 
-        // Ignore an outdated playback request.
-        if (requestId !== musicRequestId) return;
+        bgMusic.addEventListener('pause', () => {
+            musicBtn.classList.remove('playing');
+        });
 
-        musicBtn.classList.add('playing');
-    } catch (error) {
-        if (requestId !== musicRequestId) return;
-
-        console.error(
-            'Music playback failed:',
-            error.name,
-            error.message
-        );
+        bgMusic.addEventListener('error', () => {
+            console.error(
+                'Audio file error:',
+                bgMusic.currentSrc,
+                bgMusic.error?.code
+            );
+        });
     }
-}
 
-if (bgMusic && musicBtn) {
-    bgMusic.addEventListener('play', () => {
-        musicBtn.classList.add('playing');
-    });
-
-    bgMusic.addEventListener('pause', () => {
-        musicBtn.classList.remove('playing');
-    });
-
-    bgMusic.addEventListener('error', () => {
-        console.error(
-            'Music file failed to load:',
-            bgMusic.currentSrc,
-            bgMusic.error
-        );
-    });
-}
-   
 
     // 6. RSVP Form Email Handling
     const form = document.getElementById('rsvp-form');
