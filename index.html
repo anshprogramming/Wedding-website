@@ -874,36 +874,36 @@
         });
     }
 
-     function playVideo() {
-        if (!videoReady) return;
+   function playVideo() {
+    if (!videoReady) return;
 
-        // --- NEW: Unlock and play music on the first user click ---
-        if (bgMusic && bgMusic.paused) {
-            bgMusic.play().then(() => {
-                if (musicBtn) musicBtn.classList.add('playing');
-            }).catch(error => {
-                console.warn('Music play failed:', error);
+    if (!videoPlayed && video) {
+        // Try to play background music on first user interaction
+        if (bgMusic && !userInteracted) {
+            bgMusic.play().catch(error => {
+                // Ignore AbortError - normal behavior
+                if (error.name !== 'AbortError') {
+                    console.warn('Autoplay prevented, user can click music button');
+                }
             });
         }
-        // ----------------------------------------------------------
 
-        if (!videoPlayed && video) {
-            video.play().then(() => {
-                videoPlayed = true;
+        video.play().then(() => {
+            videoPlayed = true;
 
-                if (playHint) playHint.style.display = 'none';
+            if (playHint) playHint.style.display = 'none';
 
-                video.onended = function () {
-                    showMainContent();
-                };
-            }).catch(error => {
-                console.error('Video playback failed:', error);
+            video.onended = function () {
                 showMainContent();
-            });
-        } else {
+            };
+        }).catch(error => {
+            console.error('Video playback failed:', error);
             showMainContent();
-        }
+        });
+    } else {
+        showMainContent();
     }
+}
 
     function showMainContent() {
         if (!videoOverlay) return;
@@ -1404,12 +1404,11 @@ function startAestheticFireworks() {
 
         
    
-    // 5. Music Control
-    const bgMusic = document.getElementById('bg-music');
-    const musicBtn = document.getElementById('music-btn');
-
-   
+       // 5. Music Control
+const bgMusic = document.getElementById('bg-music');
+const musicBtn = document.getElementById('music-btn');
 let musicBusy = false;
+let userInteracted = false;
 
 function toggleMusic() {
     if (!bgMusic) {
@@ -1418,10 +1417,10 @@ function toggleMusic() {
     }
 
     if (musicBusy) return;
+    userInteracted = true;
 
     if (bgMusic.paused) {
         musicBusy = true;
-
         bgMusic.play()
             .then(() => {
                 if (musicBtn) {
@@ -1429,34 +1428,40 @@ function toggleMusic() {
                 }
             })
             .catch(error => {
-                console.error(
-                    'Music playback failed:',
-                    error.name,
-                    error.message
-                );
+                // Ignore AbortError - it's normal when play is interrupted
+                if (error.name !== 'AbortError') {
+                    console.error('Music playback failed:', error.name, error.message);
+                }
             })
             .finally(() => {
                 musicBusy = false;
             });
     } else {
+        musicBusy = true;
         bgMusic.pause();
-
+        
         if (musicBtn) {
             musicBtn.classList.remove('playing');
         }
+        
+        musicBusy = false;
     }
 }
 
+// Handle music button state changes
+if (bgMusic) {
+    bgMusic.addEventListener('play', () => {
+        if (musicBtn) musicBtn.classList.add('playing');
+    });
 
-    if (bgMusic) {
-        bgMusic.addEventListener('play', () => {
-            if (musicBtn) musicBtn.classList.add('playing');
-        });
-
-        bgMusic.addEventListener('pause', () => {
-            if (musicBtn) musicBtn.classList.remove('playing');
-        });
-    }
+    bgMusic.addEventListener('pause', () => {
+        if (musicBtn) musicBtn.classList.remove('playing');
+    });
+    
+    bgMusic.addEventListener('ended', () => {
+        if (musicBtn) musicBtn.classList.remove('playing');
+    });
+}
 
     // 6. RSVP Form Email Handling
     const form = document.getElementById('rsvp-form');
