@@ -1437,35 +1437,7 @@ function startAestheticFireworks() {
         });
     }
 
-    // Start music on the visitor's first interaction.
-    // Capture phase allows this to run even when the video overlay
-    // handles the same interaction.
-    function startMusicOnFirstInteraction(event) {
-        document.removeEventListener(
-            'pointerdown',
-            startMusicOnFirstInteraction,
-            true
-        );
-
-        // The music button has its own play/pause handler.
-        if (event.target.closest('#music-btn')) return;
-
-        if (bgMusic && bgMusic.paused) {
-            bgMusic.play().catch(error => {
-                console.error(
-                    'First-interaction music playback failed:',
-                    error
-                );
-            });
-        }
-    }
-
-    document.addEventListener(
-        'pointerdown',
-        startMusicOnFirstInteraction,
-        true
-    );
-
+   
 
     // 6. RSVP Form Email Handling
     const form = document.getElementById('rsvp-form');
